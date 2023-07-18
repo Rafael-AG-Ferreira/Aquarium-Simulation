@@ -1,2 +1,2 @@
 # Aquarium-Simulation
-Aquarium Simulation in NetLogo
+Aquarium Simulation in NetLogo for Artificial Intelligence Course
