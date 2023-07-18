@@ -1,0 +1,151 @@
+to setup ;-------------------------------------------------------------------------------> Função 'setup' chamada por um botão
+  clear-all ;----------------------------------------------------------------------------> Limpar toda a informação
+  reset-ticks
+  ; Definição de Variáveis Globais
+  set xx 0 ;-----------------------------------------------------------------------------> Inicialização de variável global para atribuição do valor de x de diferentes coordenadas
+  set yy 0 ;-----------------------------------------------------------------------------> Inicialização de variável global para atribuição do valor de y de diferentes coordenadas
+  set ok_corpse false ;------------------------------------------------------------------> Inicialização de variável global a falso (Não morreu nenhum lider)
+  set fishes_breed 0
+  set leader 1000 ;----------------------------------------------------------------------> Inicialização de variável global
+  set leader_found false ;---------------------------------------------------------------> Inicialização de variável global a falso (Não foi encontrado um lider)
+  set leader_xy 202 ;--------------------------------------------------------------------> Inicialização de variável global
+  set leader_x 0 ;-----------------------------------------------------------------------> Inicialização de variável global
+  set leader_y 0 ;-----------------------------------------------------------------------> Inicialização de variável global
+  set leader_heading 0 ;-----------------------------------------------------------------> Inicialização de variável global
+  set temp_x max-pxcor ;-----------------------------------------------------------------> Inicialização de variável global
+  set temp_y max-pycor ;-----------------------------------------------------------------> Inicialização de variável global
+  set temp_xx min-pxcor ;----------------------------------------------------------------> Inicialização de variável global
+  set temp_yy min-pycor ;----------------------------------------------------------------> Inicialização de variável global
+  set temp_xxx max-pxcor ;---------------------------------------------------------------> Inicialização de variável global
+  set temp_yyy max-pycor - 1 ;-----------------------------------------------------------> Inicialização de variável global
+  set precisa_ligar? false ;-------------------------------------------------------------> Inicialização da variável global
+  reset-ticks ;--------------------------------------------------------------------------> Resetar os ticks
+
+  create-resistances 1 ;-----------------------------------------------------------------> Criar 1 resistência
+  [
+    set shape "resistencia_desligada" ;--------------------------------------------------> Definir a forma da resistência
+    setxy -150 77 ;----------------------------------------------------------------------> Definir as coordenadas da resistência
+    set size 25 ;------------------------------------------------------------------------> Definir o tamanho da resistência
+  ]
+
+  create-bombs 1 ;-----------------------------------------------------------------------> Criar 1 bomba
+  [
+    set shape "bomba" ;------------------------------------------------------------------> Definir a forma da bomba
+    setxy 148 78 ;-----------------------------------------------------------------------> Definir as coordenadas da bomba
+    set size 25 ;------------------------------------------------------------------------> Definir o tamanho da bomba
+  ]
+
+  create-fishes Peixes_Laranja ;---------------------------------------------------------> Criar X (Variável que o utilizador define a quantidade) -> peixes laranja
+  [
+    set shape "fish_1_r" ;---------------------------------------------------------------> Definir a forma/imagem dos peixes laranja
+    set color red ;----------------------------------------------------------------------> Definir a cor dos peixes laranja
+    setxy random 320 - 159 random 160 - 89 ;---------------------------------------------> Definir as coordenadas dos peixes laranja (O aquário é [320*180] cujo centro é [0*0])
+    set heading random 360 ;-------------------------------------------------------------> Definir a direção inicial dos peixes aleatoriamente
+    if (heading > 180) ;-----------------------------------------------------------------> Se a direção dos peixes for maior que 180º...
+    [
+      set shape "fish_1_l" ;-------------------------------------------------------------> ... inverte-se a forma/imagem dos peixes para que estes não "andem de cabeça para baixo"
+    ]
+    set size 15 ;------------------------------------------------------------------------> Definir o tamanho dos peixes
+    set age random 5 ;-------------------------------------------------------------------> Definição de uma idade aleatória entre 0 e 5
+    set eaten 0 ;------------------------------------------------------------------------> Variável (flag) que representa se o peixe comeu
+    set last_meal 0 ;--------------------------------------------------------------------> Variável que representa o momento (ticks) em que o peixe comeu pela última vez
+    set fish_hidden false ;-------------------------------------------------------------->
+    set shoal_leader false ;------------------------------------------------------------->
+    set recent_parent false
+  ]
+
+  create-lamps Peixes_Lanterna  ; Criar X (Variavel que o utilizador define a quantidade) peixes do tipo 2
+    [
+        set shape "fish_2_r" ;-----------------------------------------------------------> Definir a forma/imagem dos peixes lanterna
+        set color magenta ;--------------------------------------------------------------> Definir a cor dos peixes laranja
+        setxy random 320 - 160 random 170 - 86 ;-----------------------------------------> Definir as coordenadas dos peixes lanterna (O aquário é [320*180] cuje centro é [0*0])
+        set heading random 360 ;---------------------------------------------------------> Definir a direção inicial dos peixes aleatoriamente
+        if (heading > 180) ;-------------------------------------------------------------> Se a direção dos peixes for maior que 180º...
+          [
+            set shape "fish_2_l" ;------------------------------------------------------->... inverte-se a forma/imagem dos peixes para que estes não "andem de cabeça para baixo"
+          ]
+        set size 15 ;--------------------------------------------------------------------> Definir o tamanho dos peixes
+        set age random 5 ;---------------------------------------------------------------> Definição de uma idade aleatória entre 0 e 5
+        set eaten 0 ;--------------------------------------------------------------------> Variável (flag) que representa se o peixe comeu
+        set last_meal 0 ;----------------------------------------------------------------> Variável que representa o momento (ticks) em que o peixe comeu pela última vez
+        set fish_hidden false
+        set shoal_leader false ;------------------------------------------------------------->
+        set recent_parent false
+    ]
+
+  ; Definição do Aquário
+  ask patches ;--------------------------------------------------------------------------> Perguntar às células
+  [
+    set lixo 0 ;-------------------------------------------------------------------------> Definir a variável local 'lixo' das células como 0
+    set temp random 8 + 11 ;-------------------------------------------------------------> Definir a variavel local 'temp' das células entre 11 e 18
+    set pcolor 88 - lixo ;---------------------------------------------------------------> Definir a cor como 88 (Código do azul claro)
+  ]
+
+  ; Definição das Bordas do Aquário
+  ask patches with [abs pycor = 90] ;----------------------------------------------------> Perguntar às células que tenham um Y = 90 ou Y = -90 (Borda Superior e Inferior do Aquário)
+  [
+    set pcolor 0 ;-----------------------------------------------------------------------> Definir a cor como 0 (Código do Preto)
+  ]
+
+  ; Definição da Areia no Fundo do Aquário
+  set i 0 ;------------------------------------------------------------------------------> Inicialização da Variável Global i para Utilizar na Criação (por iteração) das Areias
+  create-sands 33 ;----------------------------------------------------------------------> Criação das areias
+  [
+    set shape "sand" ;-------------------------------------------------------------------> Definir a forma/imagem da areia
+    set size 10 ;------------------------------------------------------------------------> Definir o tamanho da areia
+    setxy -156 + i -85.5 ;---------------------------------------------------------------> Definir as coordenadas da areia
+    set i i + 10 ;-----------------------------------------------------------------------> Definição do iterador para percorrer o eixo de x, de forma a "espalhar" a areia pelo fundo do aquário
+  ]
+
+  ; Definição das Pedras no Fundo do Aquário
+  set i 0 ;------------------------------------------------------------------------------> Inicialização da Variável Global i para Utilizar na Criação (por iteração) das Pedras
+  create-rocks 2 ;-----------------------------------------------------------------------> Criação das pedras
+  [
+    set shape "pedra" ;------------------------------------------------------------------> Definir a forma/imagem da pedra
+    set size 35;-------------------------------------------------------------------------> Definir o tamanho da pedra
+    setxy -148 + i -82 ;-----------------------------------------------------------------> Definir as coordenadas da pedra
+    set heading 0 ;----------------------------------------------------------------------> Definir a orientação da pedra com 0º
+    set i 298 ;--------------------------------------------------------------------------> Definir a variável global 'i' com 298
+    set rock_time 0 ;--------------------------------------------------------------------> Definir a variável local 'rock_time' com '
+    set rock_busy false ;----------------------------------------------------------------> Definir a variável local 'rock_busy' como FALSO
+  ]
+
+  ; Definição dos Caracóis no Fundo do Aquário
+  set i 0 ;------------------------------------------------------------------------------> Inicialização da Variável Global i para Utilizar na Criação (por iteração) dos Caracóis
+  create-snails random 5 + 2 ;-----------------------------------------------------------> Criação dos Caracóis
+  [
+    set snail_heading random 1.5 ;-------------------------------------------------------> Definir a orinetação dos Caracóis aleatoriamente
+    (ifelse
+      (snail_heading = 0) ;--------------------------------------------------------------> Caso seja 0...
+      [
+        set shape "caracol_l" ;----------------------------------------------------------> ... definir a forma/imagem dos Caracóis Orientados à Esquerda
+        set heading random 1.5 - 90 ;----------------------------------------------------> ... definir a direção entre -90º ou -89º
+      ]
+      (snail_heading = 1) ;--------------------------------------------------------------> Caso seja 1...
+      [
+        set shape "caracol_r" ;----------------------------------------------------------> ... definir a forma/imagem dos Caracóis Orientados à Direita
+        set heading random 1.5 + 90 ;----------------------------------------------------> ... definir a direção entre 90º ou 91º
+      ]
+    )
+    set size random 2 + 10 ;-------------------------------------------------------------> Definir o tamanho dos Caracóis
+    setxy -156 + i -82 ;-----------------------------------------------------------------> Definir as coordenadas dos Caracóis
+    set i i + random 60 + 7 ;------------------------------------------------------------> Definição do iterador para percorrer o eixo de x, de forma a "espalhar" os Caracóis pelo fundo do aquário
+  ]
+
+  ; Definição dos Plecos (Peixes de Fundo)
+  set i 0 ;------------------------------------------------------------------------------> Inicialização da Variável Global i para Utilizar na Criação (por iteração) dos Caracóis
+  create-cleaners 2 ;--------------------------------------------------------------------> Criação dos 2 Caracóis
+  [
+    set shape "cleaner" ;----------------------------------------------------------------> Definir a forma/imagem dos peixes-pleco Orientados à Esquerda
+    set size 15 ;------------------------------------------------------------------------> Definir o tamanho dos peixes-pleco
+    setxy random 320 random 5 - 80 ;-----------------------------------------------------> Definir as coordenadas dos peixes-pleco
+    set heading random 360 ;-------------------------------------------------------------> Definir a direção dos peixes-pleco
+  ]
+
+  create-seaweeds 5
+  [
+    set shape "algas_2"
+    set size 20
+    setxy (random 321 - 160) -80
+  ]
+end

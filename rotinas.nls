@@ -1,0 +1,617 @@
+to feed ;--------------------------------------------------------------------------------> Definição da Função 'feed' (chamada por um botão)
+  create-foods QuantFood  ;--------------------------------------------------------------> Cria comida conforme a variável 'QuantFood' definida pelo utilizador
+  [
+    set shape "x" ;----------------------------------------------------------------------> Definir o formato da comida
+    set color white ;--------------------------------------------------------------------> Definir a cor da comida para branco
+    setxy random 320 - 159 random 10 + 78 ;----------------------------------------------> Definir as coordenadas para que a comida fique no topo do aquário
+    set heading 180 ;--------------------------------------------------------------------> Definir a orientação da comida para baixo
+    set size 5 ;-------------------------------------------------------------------------> Definir o tamanho da comida
+    set food_birth ticks ;---------------------------------------------------------------> Definir variável local que regista o momento (ticks) em que a comida foi colocada no aquário
+    set food_age 0 ;---------------------------------------------------------------------> Definir variável local que regista o tempo/idade (ticks-food_births) em que a comida foi colocada no aquário
+    set food_up 0 ;----------------------------------------------------------------------> Definir variável local que serve para "espalhar" a comida pelo aquário quando esta se transforma em lixo
+    set food_iterator 0 ;----------------------------------------------------------------> Definir variável local [1] para iterar em loops para "espalhar" a comida pelo aquário quando esta se transforma em lixo
+    set food_iterator_2 0 ;--------------------------------------------------------------> Definir variável local [2] para iterar em loops para "espalhar" a comida pelo aquário quando esta se transforma em lixo
+    set food_xx 0 ;----------------------------------------------------------------------> Definir variável local para determinar o local em x quando a comida se "espalha" pelo aquário quando esta se transforma em lixo
+    set food_yy 0 ;----------------------------------------------------------------------> Definir variável local para determinar o local em y quando a comida se "espalha" pelo aquário quando esta se transforma em lixo
+  ]
+end
+
+to pollute [routine_size routine_x routine_y routine_num routine_clean]
+  let iterator_1 0 ;--------------------------------------------------------------------->
+  let iterator_2 0 ;--------------------------------------------------------------------->
+
+  while [iterator_1 < routine_size * 2] ;------------------------------------------------> 1ª Fase da Criação de um Loop Matricial para poluir a água
+  [
+    while [iterator_2 < routine_size * 2] ;----------------------------------------------> 2ª Fase da Criação de um Loop Matricial para poluir a água
+    [
+      if ((int (routine_y - iterator_1)) > -90 and (int (routine_y - iterator_1)) < 90) ;>
+      [
+        ask patch (int (routine_x + iterator_2)) (int (routine_y - iterator_1)) ;-------->
+        [
+          (ifelse
+            ((lixo > -1) and (lixo < 8) and (pcolor < 89) and (pcolor > 79) and routine_clean = false)
+            [
+              set pcolor pcolor - routine_num ;------------------------------------------>
+              set lixo lixo + routine_num ;---------------------------------------------->
+            ]
+            ((lixo > 0) and (lixo < 9) and (pcolor < 89) and (pcolor > 79) and routine_clean)
+            [
+              set pcolor pcolor + routine_num ;------------------------------------------>
+              set lixo lixo - routine_num ;---------------------------------------------->
+            ]
+          )
+        ]
+      ]
+      set iterator_2 iterator_2 + 1 ;----------------------------------------------------> Aumento em 1 do iterador 2 para a Utilização de um Loop Matricial para poluir a água
+    ]
+    set iterator_1 iterator_1 + 1 ;------------------------------------------------------> Aumento em 1 do iterador 1 para a Utilização de um Loop Matricial para poluir a água
+    set iterator_2 0 ;-------------------------------------------------------------------> "Reset" do iterador do 2º Loop Matricial para poluir a água
+  ]
+end
+
+to pass_away [x y corpse_size corpse_heading]
+  create-corpses 1 ;---------------------------------------------------------------------> ... é criado 1 corpo de cada vez
+  [
+    set shape "corpse_r" ;---------------------------------------------------------------> Definir a forma/imagem dos corpo
+    set size corpse_size ;---------------------------------------------------------------> Definir o tamanho do corpo
+    setxy xx yy ;------------------------------------------------------------------------> Definir as coordenadas do corpo com base nas coordenadas do peixe que morreu
+    set heading corpse_heading ;---------------------------------------------------------> Definir a orientação do corpo
+    if (corpse_heading > 180) ;---------------------------------------------------------->
+    [
+      set shape "corpse_l" ;-------------------------------------------------------------> Definir a forma do corpo
+    ]
+    set ok 0 ;--------------------------------------------------------------------------->
+  ]
+end
+
+to convert_corpses [x y]
+  create-nutrientes 1 ;------------------------------------------------------------------> ... é criado 1 dejedo de cada vez
+  [
+    set size 10 ;------------------------------------------------------------------------> Definir o tamanho do nutriente
+    set shape "nutriente" ;--------------------------------------------------------------> Definir a forma/imagem do nutriente
+    setxy x y ;--------------------------------------------------------------------------> Definir as coordenadas do nutriente com base nas coordenadas do corpo
+    set ok 0 ;---------------------------------------------------------------------------> Definir a variável 'ok' como zero
+  ]
+end
+
+to-report hipotenusa [x y] ;!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  let hip_squared ((x ^ 2) + (y ^ 2))
+  let hipot (sqrt hip_squared)
+  report hipot
+end
+
+to procreate
+  ask patch-here
+  [
+    if ((count fishes-here = 2) or (count lamps-here = 2))
+    [
+      ask fishes-here
+      [
+        if ( (age > 5) and (recent_parent = false) )
+        [
+          hatch 1
+          [
+            set color 65
+            set age 0
+            set size 10 ;------------------------------------------------------------------------> Definir o tamanho dos peixes
+            set eaten 0 ;------------------------------------------------------------------------> Variável (flag) que representa se o peixe comeu
+            set last_meal 0 ;--------------------------------------------------------------------> Variável que representa o momento (ticks) em que o peixe comeu pela última vez
+            set fish_hidden false ;-------------------------------------------------------------->
+            set shoal_leader false ;------------------------------------------------------------->
+            set heading random 360
+          ]
+          set recent_parent true
+        ]
+      ]
+      ask lamps-here
+      [
+        if ( (age > 5) and (recent_parent = false) )
+        [
+          hatch 1
+          [
+            set color 65
+            set age 0
+            set size 10 ;------------------------------------------------------------------------> Definir o tamanho dos peixes
+            set eaten 0 ;------------------------------------------------------------------------> Variável (flag) que representa se o peixe comeu
+            set last_meal 0 ;--------------------------------------------------------------------> Variável que representa o momento (ticks) em que o peixe comeu pela última vez
+            set fish_hidden false ;-------------------------------------------------------------->
+            set shoal_leader false ;------------------------------------------------------------->
+            set heading random 360
+          ]
+          set recent_parent true
+        ]
+      ]
+    ]
+  ]
+end
+
+to muda_direcao_aleatoriamente [valor_de_frequencia espectro_de_variancia valor_adicional]
+    if (((ticks - (int (ticks / valor_de_frequencia)) * valor_de_frequencia) = 0) and ticks != 0) ;----------------> A cada meio milhão de ticks os peixes mudam espontaneamente de direção
+    [
+      set heading random espectro_de_variancia + valor_adicional ;------------------------------------------------------> Gira entre 0º e 360º
+    ]
+end
+
+to envelhecer [valor_de_frequencia]
+    if (((ticks - (int (ticks / valor_de_frequencia)) * valor_de_frequencia) = 0) and ticks != 0) ;--------------------> A cada milhão de ticks os peixes ficam 1 ano mais velhos
+    [
+      set age age + 1 ;------------------------------------------------------------------>
+    ]
+end
+
+to verifica_condicoes_morte [current_size current_age size_max size_min age_max]
+  if ((current_size > size_max) or (current_size < size_min) or (current_age > age_max)) ;-----------------------------------------------------------> Se o tamanho dos peixes laranja for inferior a 6 (malnutrição) ou se for superior a 29 (obesidade) eles morrem
+  [
+    set xx xcor
+    set yy ycor
+    set i size
+    set ok 1
+    set global_int heading
+    if (shoal_leader = true)
+    [
+      set leader_found false
+      set leader_xy 202
+      set shoal_leader false
+    ]
+    die
+  ]
+end
+
+to verifica_condicoes_alimentacao [ultima_refeicao frequencia change]
+    if (ticks - ultima_refeicao) > frequencia ;-------------------------------------------------> Se a última refeição dos peixes laranja tiver sido à mais de 49999 ticks eles ficam mais "magros"
+    [
+      set size size + change
+      set eaten eaten + change
+    ]
+end
+
+to verifica_heading
+  (ifelse ;--------------------------------------------------------------------------> Caso:
+    heading < 180 ;------------------------------------------------------------------> - a orientação dos peixes laranja seja < 180º
+    [
+      (ifelse 
+        fishes_breed = 1
+        [
+          set shape "fish_1_r" ;---------------------------------------------------------> ... a forma/imagem dos peixes laranja é orientada à direita
+          if (shoal_leader)
+          [
+            set shape "king_fish_r"
+          ]
+        ]
+        fishes_breed = 2 
+        [
+          set shape "fish_2_r"
+        ]
+      )
+    ]
+    heading > 179 ;------------------------------------------------------------------> - a orientação dos peixes laranja seja > 179º
+    [
+      (ifelse
+        fishes_breed = 1
+        [
+          set shape "fish_1_l" ;---------------------------------------------------------> ... a forma/imagem dos peixes laranja é orientada à esquerda
+          if (shoal_leader)
+          [
+            set shape "king_fish_l"
+          ]
+        ]
+        fishes_breed = 2
+        [
+          set shape "fish_2_l"
+        ]
+      )          
+    ]
+  )
+end
+
+to verifica_limites_aquario
+    (ifelse ;----------------------------------------------------------------------------> Caso:
+      pycor > max-pycor - 7 ;------------------------------------------------------------> - a coordenada do peixe laranja em y seja 90 - 6 ...
+      [
+        set heading random 180 + 90 ;----------------------------------------------------> ... gira entre 90º e 270º (Fica virado para baixo)
+      ]
+      pycor < min-pycor + 7 ;------------------------------------------------------------> - a coordenada do peixe laranja em y seja - 90 + 6
+      [
+        set heading random 180 - 90 ;----------------------------------------------------> ... gira entre 90º e 270º (Fica virado para cima)
+      ]
+    )
+    forward 0
+end
+
+to escolhe_lider    
+    if ((hipotenusa (abs(xcor)) (abs(ycor)) < leader_xy) and (leader_found = false)) ;--->
+    [
+      set leader who ;------------------------------------------------------------------->
+      set leader_xy (hipotenusa (abs(xcor)) (abs(ycor))) ;------------------------------->
+    ]
+end
+
+to define_info_lider    
+    if ((ticks > 0) and (leader_found = false)) ;---------------------------------------->
+    [
+      ask fish leader ;------------------------------------------------------------------>
+      [
+        set shoal_leader true ;---------------------------------------------------------->
+        set shape "king_fish_r" ;-------------------------------------------------------->
+        set leader_found true ;---------------------------------------------------------->
+      ]
+    ]
+end
+
+to recolhe_info_lider_cardume    
+    ask fish leader ;-------------------------------------------------------------------->
+    [
+      set leader_x xcor ;---------------------------------------------------------------->
+      set leader_y ycor ;---------------------------------------------------------------->
+      set leader_heading heading ;------------------------------------------------------->
+    ]
+    
+    if (abs(leader_x - xcor)) < 10 ;----------------------------------------------------->
+    [
+      if (abs(leader_y - ycor)) < 10 ;--------------------------------------------------->
+      [
+        set heading leader_heading ;----------------------------------------------------->
+      ]
+    ]
+end
+
+to verifica_nutrientes
+    ask patch-here ;------------------------------------------------------------> Pergunta às celulas
+    [
+      if count nutrientes-here = 1 ;------------------------------------------------------> Caso numa mesma célula se encontre um peixe laranja e comida
+      [
+        ask nutrientes-here [ die ]
+        ask fishes-here [ set age age - 1 ]
+      ]
+    ]
+end
+
+to turn_dead    
+  if (ok = 1) ;--------------------------------------------------------------------------> Caso:
+  [
+    pass_away xx yy i global_int ;---------------------------------------------------> Chama a função
+  ]
+  ask corpses ;-----------------------------------------------------------------------> Pergunta aos corpor
+  [
+    set heading 180 ;----------------------------------------------------------------> Define a direção para 180
+    if (pycor > -82) ;---------------------------------------------------------------> Caso:
+    [
+      forward random 0.1 + 0.5 ;-------------------------------------------------------> Faz os peixes laranja avançar 1 célula para a frente a uma velocidade aleatória entre 0.1 e 0.5???
+    ]
+  ]
+end
+
+to deslocamento_aleatorio_foods
+    if (pycor > min-pycor + 9) ;----------------------------------------------------> Caso não esteja na última célula do aquário
+    [
+      set heading random 90 + 135 ;------------------------------------------------> Coloca um valor aleatório na direção
+      forward random 1.5 + 0.1 ;------------------------------------------------> Faz as comidas avançar 1 célula para baixo a uma velocidade aleatória entre 0.5 e 1.5???
+    ]
+end
+
+to verifica_comido  
+    if count fishes-here = 1 ;------------------------------------------------------> Caso numa mesma célula se encontre um peixe laranja e comida
+    [
+      ask fishes-here
+      [
+        set last_meal ticks ;-------------------------------------------------> Definição da sua última refeição
+        set eaten eaten + 1 ;-------------------------------------------------> Definição da quantidade de comida ingerida
+        set size 15 + (eaten * 0.5) ;-----------------------------------------> Definição do rácio de "engorda"
+        set xx xcor ;---------------------------------------------------------> Definição do valor de x das coordenadas atuais da comida para (posterior) realização de dejetos
+        set yy ycor ;---------------------------------------------------------> Definição do valor de y das coordenadas atuais da comida para (posterior) realização de dejetos
+      ]
+      set ok ok + 1 ;-----------------------------------------------------------> Atribuição à flag que permite saber se os peixes comeram ou não
+      die ;---------------------------------------------------------------------> O pedaço de comida deixa de existir (Morre), pois um peixe laranja comeu-a
+    ]
+    if count lamps-here = 1 ;------------------------------------------------------> Caso numa mesma célula se encontre um peixe lanterna e comida
+    [
+      ask lamps-here
+      [
+        set last_meal ticks ;-------------------------------------------------> Definição da sua última refeição
+        set eaten eaten + 1 ;-------------------------------------------------> Definição da quantidade de comida ingerida
+        set size 15 + (eaten * 0.5) ;-----------------------------------------> Definição do rácio de "engorda"
+        set xx xcor ;---------------------------------------------------------> Definição do valor de x das coordenadas atuais da comida para (posterior) realização de dejetos
+        set yy ycor ;---------------------------------------------------------> Definição do valor de y das coordenadas atuais da comida para (posterior) realização de dejetos
+      ]
+      set ok ok + 1 ;-----------------------------------------------------------> Atribuição à flag que permite saber se os peixes comeram ou não
+      die ;---------------------------------------------------------------------> O pedaço de comida deixa de existir (Morre), pois um peixe lanterna comeu-a
+    ]
+end
+
+to verifica_decomposicao
+    if food_age > 1000 ;---------------------------------------------------------> Se a comida tiver mais de 25000 ticks desde que foi posta no aquário ela decompõe-se
+    [
+      ask patch-here ;----------------------------------------------------------> Pergunta à célula atual...
+      [
+        if (lixo > 7) ;-------------------------------------------------------> ...se a sua variàvel lixo é maior que 7 (8 é o máximo, pois aí a água fica preta)
+        [
+          ask foods-here ;--------------------------------------------------> Pergunta às comidas...
+          [
+            set food_up food_up + 1 ;-------------------------------------> ...para aumentar o valor da sua flag posicional, pois não é possível sujar mais uma água que já se encontra no seu máximo de sujidade
+          ]
+        ]
+      ]
+      set food_xx xcor - 5 + 1 ;------------------------------------------------> Atruibuição a x, o valor de x das coordenadas da comida, menos o valor relacionado com o tamanho da comida (baseline da poluição da comida)
+      set food_yy ycor + 5 - 1 ;------------------------------------------------> Atruibuição a y, o valor de y das coordenadas da comida, menos o valor relacionado com o tamanho da comida (baseline da poluição da comida)
+      if (food_up > 0) ;--------------------------------------------------------> Se a flag da poluição daquele local estiver "acionada"...
+      [
+        set food_yy ycor + (5 * 2 * food_up) - 1 ;----------------------------> ...a poluição da comida sobe
+      ]
+      pollute 5 food_xx food_yy 1 false
+      set food_up 0 ;-----------------------------------------------------------> "Reset" da flag relacionada com a posição da poluição da água
+      die ;---------------------------------------------------------------------> Morte do agente comida
+    ]
+end  
+
+to suja_na_passagem
+  if pycor > -80 ;-----------------------------------------------------------------> Caso o dejeto não esteja na última célula do aquário...
+  [
+    forward 1 ;------------------------------------------------------------------> ... desce uma casa
+    ask patch-here ;-------------------------------------------------------------> Pergunta às celulas
+    [
+      if (lixo < 8) ;----------------------------------------------------------> Se a sua variàvel lixo é menor de 8
+      [
+        set pcolor pcolor - 1 ; Acrescenta em 1 o código da cor da célula ;--> ...se sim a água muda de cor para mais escura (poluição)
+        set lixo lixo + 1 ; Acrescenta em 1 o valor do lixo na célula ;------> ...é aumentado o valor da variável lixo
+      ]
+    ]
+  ]
+end
+
+to desintegrar
+  if dung_age > 1000 ;------------------------------------------------------------> Se a idade do dejeto é superior a 1000 ticks
+  [
+    ask patch-here ;-------------------------------------------------------------> Perguntar à célula
+    [
+      if (lixo > 7) ;----------------------------------------------------------> Se a sua variável lixo é maior que 7
+      [
+        ask dungs-here ;-----------------------------------------------------> Perguntar ao dejeto
+          [
+          set dung_up dung_up + 1 ;----------------------------------------> ...para aumentar o valor da sua flag posicional, pois não é possível sujar mais uma água que já se encontra no seu máximo de sujidade
+        ]
+      ]
+    ]
+    set dung_xx xcor - dung_size + 1 ;------------------------------------------> Atruibuição a x, o valor de x das coordenadas do dejeto, menos o valor relacionado com o tamanho do dejeto (baseline da poluição do dejeto)
+    set dung_yy ycor + dung_size - 1 ;------------------------------------------> Atruibuição a y, o valor de y das coordenadas do dejeto, menos o valor relacionado com o tamanho do dejeto (baseline da poluição do dejeto)
+    if (dung_up > 0) ;----------------------------------------------------------> Se a flag da poluição daquele local estiver "acionada"...
+    [
+      set dung_yy ycor + (dung_size * 2 * dung_up) - 1 ;----------> ...a poluição do dejeto sobe
+    ]
+    pollute dung_size dung_xx dung_yy 1 false
+    set dung_up 0 ;-------------------------------------------------> "Reset" da flag relacionada com a posição da poluição da água
+    die
+  ]
+end
+
+to limites_caracois      
+  (ifelse ;-----------------------------------------------------------> Caso:
+    (ycor > -79) ;---------------------------------------------------->  - a coordenada do caracol em y seja maior que -79 ...
+    [
+      (ifelse
+        heading < 180 ;--------------------------------------------->  - e se a sua orientação for entre Norte e Este
+        [
+          set heading random 1.5 + 90 ;---------------------------->  - a sua orientação para a ser entre Sul e Este
+        ]
+        heading > 179 ;--------------------------------------------->  - e se a sua orientação for entre Norte e Oeste
+        [
+          set heading random -1.5 + 270 ;-------------------------->  - a sua orientação para a ser entre Sul e Oeste
+        ]
+      )
+    ]
+    (ycor < -85) ;---------------------------------------------------->  - a coordenada do caracol em y seja inferior a -85 ...
+    [
+      (ifelse
+        heading < 180 ;--------------------------------------------->  - e se a sua orientação for entre Sul e Este
+        [
+          set heading random -1.5 + 90 ;--------------------------->  - a sua orientação para a ser entre Norte e Este
+        ]
+        heading > 179 ;--------------------------------------------->  - e se a sua orientação for entre Sul e Oeste
+        [
+          set heading random 1.5 + 270 ;--------------------------->  - a sua orientação para a ser entre Norte e Oeste
+        ]
+      )
+    ]
+  )
+end
+
+to shape_caracois
+  (ifelse ;-----------------------------------------------------------> Caso:
+    heading < 180 ;---------------------------------------------------> - a orientação dos caracóis lanterna seja < 180º
+    [
+      set shape "caracol_r" ;---------------------------------------> ... a forma/imagem dos caracóis é orientada à direita
+    ]
+    heading > 179 ;---------------------------------------------------> - a orientação dos caracóis seja > 179º
+    [
+      set shape "caracol_l" ;---------------------------------------> ... a forma/imagem dos caracóis é orientada à esquerda
+    ]
+  )
+end
+
+to limpar_lixo
+  ask patch-here ;------------------------------------------------------> Pergunta às celulas
+  [
+   if count cleaners-here = 1 ;-----------------------------------------> Caso numa mesma célula se encontre um peixe laranja e comida
+   [
+     if (lixo > 0) ;----------------------------------------------------> Caso o lixo esteja a 0
+     [
+       ask cleaners ;---------------------------------------------------> Pergunta aos limpadores
+       [
+         pollute 5 (xcor - 5 + 1) (ycor + 5 - 1) 1 true ;---------------> Chama a função pollute
+       ]
+     ]
+   ]
+  ]
+end
+
+to shape_pedra
+  if (rock_busy = false) ;----------------------------------------------> Caso a variável esteja a FALSE
+  [
+    set shape "pedra"  ;------------------------------------------------> Muda a forma da pedra
+  ]
+end
+
+to hide_under_rock
+  if (((count fishes-here = 1) or (count lamps-here = 1)) and rock_busy = false) ;---> Caso:
+  [
+    set rock_time ticks ;---------------------------------------------------> Coloca o número de ticks na variável rock_time
+    ask fishes-here ;-------------------------------------------------------> Pergunta se existe peixes na pedra
+    [
+      set fish_hidden true ;------------------------------------------------> Coloca a variável a TRUE
+      forward 0 ;-----------------------------------------------------------> Anda 0 células para a frente
+    ]
+    ask lamps-here ;--------------------------------------------------------> Pergunta se existe peixes na pedra
+    [
+      set fish_hidden true ;------------------------------------------------> Coloca a variável a TRUE
+      forward 0 ;-----------------------------------------------------------> Anda 0 células para a frente
+    ]
+    set shape "pedra_hidden" ;----------------------------------------------> Muda a forma da pedra
+    set rock_busy true ;----------------------------------------------------> Coloca a variável a TRUE
+  ]
+end
+
+to get_out_rock      
+  if (ticks - rock_time) > 9999 ; ------------------------------------------> Caso:
+  [
+    ask fishes-here ;-------------------------------------------------------> Pergunta se tem algum peixe aonde está a pedra
+    [
+      set fish_hidden false ;-----------------------------------------------> Coloca a variável a FALSE
+      set heading 0 ;-------------------------------------------------------> Coloca a direção a 0
+      forward 1 ;-----------------------------------------------------------> Anda uma célula para a frente
+    ]
+    ask lamps-here ;--------------------------------------------------------> Pergunta se tem algum peixe-lanterna aonde está a pedra
+    [
+      set fish_hidden false ;-----------------------------------------------> Coloca a variável a FALSE
+      set heading 0 ;-------------------------------------------------------> Coloca a direção a 0
+      forward 1 ;-----------------------------------------------------------> Anda uma célula para a frente
+    ]
+    set rock_busy false ;---------------------------------------------------> Coloca a variável a FALSE
+  ]
+end
+
+to aumenta-temperatura
+  if(troca_temperatura?)[ ;-------------------------------------------------> Caso:
+    set temp_aux random 20000 ;---------------------------------------------> Coloca um número aleatório entre 0 e 19999 na variável tem_aux
+    while[temp_aux > 0] ;---------------------------------------------------> Enquanto tem_aux for maior do que 0
+    [
+      set temp_x (random (max-pxcor + abs(min-pxcor) + 1)) - max-pxcor ;----> Coloca na variável temp_x um valor entre o minimo e máximo das coordenadas em x
+      set temp_y (random (max-pycor + abs(min-pycor) + 1)) - max-pycor ;----> Coloca na variável temp_y um valor entre o minimo e máximo das coordenadas em y
+      ask patch temp_x temp_y ;---------------------------------------------> Perfunta à célula temp_x temp_y
+      [
+        if(temp < 18) ;-----------------------------------------------------> Caso temp seja menor do que 18
+        [
+          set temp temp + 1 ;-----------------------------------------------> Incrementa 1
+        ]
+      ]
+      set temp_aux temp_aux - 1 ;-------------------------------------------> Decrementa 1 à variável temp_aux
+    ]
+  ]
+end
+
+to troca-patches
+  ask patch temp_x temp_y ;-------------------------------------------------> Perfunta à célula temp_x temp_y
+  [
+    set temp_auxtwo temp ;--------------------------------------------------> Coloca na variável temp_auxtwo o valor de temo
+    set temp int((temp_aux + temp) / 2) ;-----------------------------------> Coloca na variável temp a média dos valores de temp_aux e de temp
+    set temp_aux temp_auxtwo ;----------------------------------------------> Coloca na variável temp_auxo valor de temp_auxtwo
+  ]
+end
+
+to Trocas
+  ask patch (max-pxcor) (max-pycor - 1) ;-----------------------------------> Pergunta à célula do canto superior direito
+  [
+    set temp_aux temp ;-----------------------------------------------------> Coloca na variável temp_aux o velor de temp
+  ]
+  while [temp_x != 7 OR temp_y != 0] ;--------------------------------------> Enquanto a variável temp_x for diferente de 7 e temp_y diferente de 0
+  [
+    while[temp_x > temp_xx] ;-----------------------------------------------> Enquanto a variável temp_x for maior do que a variável temp_xx
+    [
+      troca-patches ;-------------------------------------------------------> Chama o procedimento troca-patches
+      set temp_x temp_x - 1 ;-----------------------------------------------> Decrementa 1 à variável temp_x
+    ]
+    while[temp_y > temp_yy] ;-----------------------------------------------> Enquanto a variável temp_y for maior do que a variável temp_yy
+    [
+      troca-patches ;-------------------------------------------------------> Chama o procedimento troca-patches
+      set temp_y temp_y - 1 ;-----------------------------------------------> Decrementa 1 à variável temp_y
+    ]
+    while[temp_x < temp_xxx] ;-----------------------------------------------> Enquanto a variável temp_x for menor do que a variável temp_xxx
+    [
+      troca-patches ;-------------------------------------------------------> Chama o procedimento troca-patches
+      set temp_x temp_x - 1 ;-----------------------------------------------> Decrementa 1 à variável temp_x
+    ]
+    while[temp_y < temp_yyy] ;----------------------------------------------> Enquanto a variável temp_y for menor do que a variável temp_yyy
+    [
+      troca-patches ;-------------------------------------------------------> Chama o procedimento troca-patches
+      set temp_y temp_y - 1 ;-----------------------------------------------> Decrementa 1 à variável temp_y
+    ]
+    set temp_xx temp_xx + 1 ;-----------------------------------------------> Incrementa 1 à variável temp_xx
+    set temp_yy temp_yy + 1 ;-----------------------------------------------> Incrementa 1 à variável temp_yy
+    set temp_xxx temp_xxx - 1 ;---------------------------------------------> Decrementa 1 à variável temp_xxx
+    set temp_yyy temp_yyy - 1 ;---------------------------------------------> Decrementa 1 à variável temp_yyy
+  ]
+end
+
+to switches
+  if(mostra != patches_mostra?) ;-------------------------------------------> Se a variável mostra for diferente da variável patches_mostra? (Se o que tiver a mostrar for diferente do switch)
+    [
+      ask patches ;---------------------------------------------------------> Pergunta às células
+      [
+        if(pycor != 90) ;---------------------------------------------------> Caso:
+        [
+          (ifelse
+            (patches_mostra? = "Qualidade") ;-------------------------------> Caso:
+            [
+              set pcolor 88 - lixo ;---------------------------------------->  -coloca a cor da célula
+              set mostra "Qualidade" ;-------------------------------------->  -coloca a variável mostra igual a "Qualidade"
+            ]
+            (patches_mostra? = "Temperatura") ;-----------------------------> Caso:
+            [
+              set pcolor temp ;--------------------------------------------->  -coloca a cor da célula
+              set mostra "Temperatura" ;------------------------------------>  -coloca a variável mostra igual a "Temperatura"
+            ]
+          )
+        ]
+      ]
+    ]
+  
+  if(resistencia_ligada?) ;-------------------------------------------------> Caso:
+  [
+    set med_temp mean[temp] of patches ;------------------------------------>  -coloca na variável med_temp o valor médio da variável temp
+    (ifelse
+      ((36 - med_temp) <= 20) ;---------------------------------------------> Caso:
+      [
+        set precisa_ligar? true ;------------------------------------------->  -coloca o precisa_ligar? a TRUE
+      ]
+      ((36 - med_temp) >= 24) ;---------------------------------------------> Caso:
+      [
+        set precisa_ligar? false ;------------------------------------------>  -colcoa o precisa_ligar? a FALSE
+      ]
+    )
+  ]
+  
+  (ifelse
+    (resistencia_ligada? AND precisa_ligar?) ;------------------------------> Caso:
+    [
+      ask resistances ;----------------------------------------------------->  -pergunta à resistência
+      [
+        set shape "resistencia_ligada" ;------------------------------------>   ... e define a forma
+        ask patches in-radius 10 ;------------------------------------------>   ... e pergunta às células num raio de 10 células
+        [
+          set temp 11 ;-----------------------------------------------------> Coloca a variável temp a 11
+        ]
+      ]
+    ]
+  
+    (not resistencia_ligada? AND not precisa_ligar?) ;---------------------> Caso:
+    [
+      ask resistances ;---------------------------------------------------->  -pergunta à resistência
+      [
+        set shape "resistencia_desligada" ;-------------------------------->   ... e define a forma
+      ]
+    ]
+  )
+  
+  if (bomba_ligada?) ;-----------------------------------------------------> Caso:
+  [
+   Trocas ;---------------------------------------------------------------->  -chama o procedimento
+  ]
+end
